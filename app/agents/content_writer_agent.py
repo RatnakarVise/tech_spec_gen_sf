@@ -48,15 +48,15 @@ def filter_payload_by_keys(payload: Dict[str, Any], required_keys: List[str]) ->
 # Each bundle is ( [section_name1, section_name2, ...], [payload_key1, payload_key2, ...])
 # NOT clubbed sections can be left as ["Section"], ["payload_key1"] so they're handled individually.
 SECTION_BUNDLES = [
-    (["Document Information", "Introduction", "Requirement Overview", "Solution Approach", "SAP Object Details"], ['pgm_name','type', 'inc_name', 'explanation', 'page', 'window','textPayload','mapping','usage']),
-    (["User Interface Details"], ["selectionscreen", 'page', 'window','textPayload','mapping','usage']),
-    (["Processing Logic & Control Flow"], ['pgm_name', 'type', 'explanation', 'page', 'window','textPayload','mapping','usage']),
-    (["Detailed Logic Block Descriptions"], ['pgm_name', 'type', 'explanation',  'page', 'window','textPayload','mapping','usage']),
-    (["Output Details"], ['pgm_name', 'type', 'explanation',  'page', 'window','textPayload','mapping','usage']),
-    (["Data Declarations & SAP Tables Used", "Enhancements & Modifications", "Error Handling & Logging", "Performance Considerations", "Security & Authorizations"], [ 'selectionscreen', 'declarations', 'explanation', 'page', 'window','textPayload','mapping','usage']),
-    (["Test Scenario"], [ 'selectionscreen', 'declarations', 'explanation',  'page', 'window','textPayload','mapping','usage']),
-    (["Flow Diagram"],[ 'selectionscreen', 'declarations', 'explanation',  'page', 'window','textPayload','mapping','usage']),
-    (["SmartForm Layout Details","#Field Mapping Details"], ['formName', 'elemName' , 'nodeType', 'coding','page', 'window','textPayload','mapping','usage']),
+    (["Document Information", "Introduction", "Requirement Overview", "Solution Approach", "SAP Object Details"], ['pgm_name','type', 'inc_name', 'explanation', 'formName', 'elemName' , 'nodeType', 'coding','page', 'window','textPayload','mapping','usage']),
+    (["User Interface Details"], ["selectionscreen",'formName', 'elemName' , 'nodeType', 'coding','page', 'window','textPayload','mapping','usage']),
+    (["Processing Logic & Control Flow"], ['pgm_name', 'type', 'explanation','formName', 'elemName' , 'nodeType', 'coding','page', 'window','textPayload','mapping','usage']),
+    (["Detailed Logic Block Descriptions"], ['pgm_name', 'type', 'explanation',  'formName', 'elemName' , 'nodeType', 'coding','page', 'window','textPayload','mapping','usage']),
+    (["Output Details"], ['pgm_name', 'type', 'explanation',  'formName', 'elemName' , 'nodeType', 'coding','page', 'window','textPayload','mapping','usage']),
+    (["Data Declarations & SAP Tables Used", "Enhancements & Modifications", "Error Handling & Logging", "Performance Considerations", "Security & Authorizations"], [ 'selectionscreen', 'declarations', 'explanation','formName', 'elemName' , 'nodeType', 'coding','page', 'window','textPayload','mapping','usage']),
+    (["Test Scenario"], [ 'selectionscreen', 'declarations', 'explanation', 'formName', 'elemName' , 'nodeType', 'coding','page', 'window','textPayload','mapping','usage']),
+    (["Flow Diagram"],[ 'selectionscreen', 'declarations', 'explanation',  'formName', 'elemName' , 'nodeType', 'coding','page', 'window','textPayload','mapping','usage']),
+    (["SmartForm Layout Details","#Field Mapping Details"], ['formName', 'elemName' , 'nodeType', 'coding','formName', 'elemName' , 'nodeType', 'coding','page', 'window','textPayload','mapping','usage']),
     (["Transport Management"], ['transport']),
     (["Sign-Off"], []),
 ]
