@@ -43,20 +43,96 @@ def filter_payload_by_keys(payload: Dict[str, Any], required_keys: List[str]) ->
         return payload
     return {k: payload[k] for k in required_keys if k in payload}
 
+
+
+# 🔧 NEW: Normalizer for SMARTFORM/SF_STRUTCURE
+def normalize_smartform_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Flatten SMARTFORM/SF_STRUTCURE into the flat keys expected by SECTION_BUNDLES.
+    - Collect all pages, windows, and elements instead of only the first.
+    - Merge multiple values into lists or joined strings.
+    """
+    normalized = dict(payload)
+
+    # --- SMARTFORM extraction ---
+    smartforms = payload.get("SMARTFORM", [])
+    if smartforms:
+        sf = smartforms[0]
+        normalized["formName"] = sf.get("formName", "")
+        field_table = sf.get("field_table", {})
+
+        # Pages
+        if "pages" in field_table:
+            normalized["page"] = [p.get("page", "") for p in field_table["pages"] if "page" in p]
+
+        # Windows
+        if "windows" in field_table:
+            normalized["window"] = [w.get("window", "") for w in field_table["windows"] if "window" in w]
+
+        # Elements (flatten all from all windows)
+        elements = []
+        for w in field_table.get("windows", []):
+            elements.extend(w.get("elements", []))
+
+        if elements:
+            # Merge multiple elemNames/nodeTypes
+            normalized["elemName"] = [e.get("elemName", "") for e in elements if e.get("elemName")]
+            normalized["nodeType"] = [e.get("nodeType", "") for e in elements if e.get("nodeType")]
+
+            # Merge textPayloads into one joined string
+            texts = [e.get("textPayload", "") for e in elements if e.get("textPayload")]
+            normalized["textPayload"] = " \n".join(texts)
+
+            # Mapping + Usage can be lists
+            normalized["mapping"] = [e.get("mapping", "") for e in elements if e.get("mapping")]
+            normalized["usage"] = [e.get("usage", "") for e in elements if e.get("usage")]
+
+    # --- SF_STRUTCURE extraction ---
+    sf_struct = payload.get("SF_STRUTCURE", [])
+    if sf_struct:
+        sf = sf_struct[0]
+
+        if "pages" in sf:
+            normalized["page"] = [p.get("page", "") for p in sf["pages"] if "page" in p]
+
+        if "windows" in sf:
+            normalized["window"] = [w.get("window", "") for w in sf["windows"] if "window" in w]
+
+        # Fields -> elemName list
+        if "FIELDS" in sf:
+            normalized["elemName"] = [f.get("FIELD", "") for f in sf["FIELDS"] if "FIELD" in f]
+
+        # Tables -> list of names
+        if "TABLES" in sf:
+            normalized["tables"] = [t.get("TABLE", "") for t in sf["TABLES"] if "TABLE" in t]
+
+    return normalized
+
 # =============================================================================
 # 💡 HERE you define how to club which sections and what payload keys to use
 # Each bundle is ( [section_name1, section_name2, ...], [payload_key1, payload_key2, ...])
 # NOT clubbed sections can be left as ["Section"], ["payload_key1"] so they're handled individually.
+# =============================================================================
+# 💡 Define which sections use which payload keys
 SECTION_BUNDLES = [
-    (["Document Information", "Introduction", "Requirement Overview", "Solution Approach", "SAP Object Details"], ['pgm_name','type', 'inc_name', 'explanation', 'formName', 'elemName' , 'nodeType', 'coding','page', 'window','textPayload','mapping','usage']),
-    (["User Interface Details"], ["selectionscreen",'formName', 'elemName' , 'nodeType', 'coding','page', 'window','textPayload','mapping','usage']),
-    (["Processing Logic & Control Flow"], ['pgm_name', 'type', 'explanation','formName', 'elemName' , 'nodeType', 'coding','page', 'window','textPayload','mapping','usage']),
-    (["Detailed Logic Block Descriptions"], ['pgm_name', 'type', 'explanation',  'formName', 'elemName' , 'nodeType', 'coding','page', 'window','textPayload','mapping','usage']),
-    (["Output Details"], ['pgm_name', 'type', 'explanation',  'formName', 'elemName' , 'nodeType', 'coding','page', 'window','textPayload','mapping','usage']),
-    (["Data Declarations & SAP Tables Used", "Enhancements & Modifications", "Error Handling & Logging", "Performance Considerations", "Security & Authorizations"], [ 'selectionscreen', 'declarations', 'explanation','formName', 'elemName' , 'nodeType', 'coding','page', 'window','textPayload','mapping','usage']),
-    (["Test Scenario"], [ 'selectionscreen', 'declarations', 'explanation', 'formName', 'elemName' , 'nodeType', 'coding','page', 'window','textPayload','mapping','usage']),
-    (["Flow Diagram"],[ 'selectionscreen', 'declarations', 'explanation',  'formName', 'elemName' , 'nodeType', 'coding','page', 'window','textPayload','mapping','usage']),
-    (["SmartForm Layout Details","#Field Mapping Details"], ['formName', 'elemName' , 'nodeType', 'coding','formName', 'elemName' , 'nodeType', 'coding','page', 'window','textPayload','mapping','usage']),
+    (["Document Information", "Introduction", "Requirement Overview", "Solution Approach", "SAP Object Details"],
+     ['pgm_name','type','inc_name','explanation','formName','elemName','nodeType','coding','page','window','textPayload','mapping','usage']),
+    (["User Interface Details"],
+     ["selectionscreen",'formName','elemName','nodeType','coding','page','window','textPayload','mapping','usage']),
+    (["Processing Logic & Control Flow"],
+     ['pgm_name','type','explanation','formName','elemName','nodeType','coding','page','window','textPayload','mapping','usage']),
+    (["Detailed Logic Block Descriptions"],
+     ['pgm_name','type','explanation','formName','elemName','nodeType','coding','page','window','textPayload','mapping','usage']),
+    (["Output Details"],
+     ['pgm_name','type','explanation','formName','elemName','nodeType','coding','page','window','textPayload','mapping','usage']),
+    (["Data Declarations & SAP Tables Used", "Enhancements & Modifications", "Error Handling & Logging", "Performance Considerations", "Security & Authorizations"],
+     ['selectionscreen','declarations','explanation','formName','elemName','nodeType','coding','page','window','textPayload','mapping','usage']),
+    (["Test Scenario"],
+     ['selectionscreen','declarations','explanation','formName','elemName','nodeType','coding','page','window','textPayload','mapping','usage']),
+    (["Flow Diagram"],
+     ['selectionscreen','declarations','explanation','formName','elemName','nodeType','coding','page','window','textPayload','mapping','usage']),
+    (["SmartForm Layout Details","Field Mapping Details"],
+     ['formName','elemName','nodeType','coding','page','window','textPayload','mapping','usage']),
     (["Transport Management"], ['transport']),
     (["Sign-Off"], []),
 ]
@@ -90,12 +166,13 @@ class ContentWriterAgent:
         self.results = []
 
         handled_sections = set()
+        normalized_payload = normalize_smartform_payload(payload)
         for section_names, payload_keys in SECTION_BUNDLES:
             for s in section_names:
                 if s in handled_sections:
                     continue
             section_bibles = {s: fetch_bible_knowledge(self.template_sections, s) for s in section_names}
-            sub_payload = filter_payload_by_keys(payload, payload_keys)
+            sub_payload = filter_payload_by_keys(normalized_payload, payload_keys)
             logger.info(f"Generating content for sections: {section_names} with keys {payload_keys}")
 
             section_texts = self.generate_sections(section_names, section_bibles, sub_payload)
