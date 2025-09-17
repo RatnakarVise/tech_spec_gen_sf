@@ -116,11 +116,11 @@ def filter_payload_by_keys(payload: Dict[str, Any], required_keys: List[str]) ->
 # NOT clubbed sections can be left as ["Section"], ["payload_key1"] so they're handled individually.
 SECTION_BUNDLES = [
     (["Document Information", "Introduction", "Requirement Overview", "Solution Approach", "SAP Object Details"],
-     ['pgm_name','type','inc_name','explanation','sf_structure','sf_purpose']),
+     ['pgm_name','type','inc_name','explanation']),
     (["User Interface Details"],
      ["selectionscreen"]),
     (["Processing Logic & Control Flow"],
-     ['pgm_name','type','explanation','sf_structure','sf_purpose']),
+     ['pgm_name','type','explanation']),
     (["Detailed Logic Block Descriptions"],
      ['pgm_name','type','explanation']),
     (["Output Details"],
@@ -128,7 +128,7 @@ SECTION_BUNDLES = [
     (["Data Declarations & SAP Tables Used", "Error Handling & Logging", "Performance Considerations", "Security & Authorizations"],
      ['selectionscreen','declarations','explanation']),
     (["Test Scenario"],
-     ['selectionscreen','declarations','explanation','sf_structure','sf_purpose']),
+     ['selectionscreen','declarations','explanation']),
     (["Flow Diagram"],
      ['selectionscreen','declarations','explanation']),
     (["Smartform Layout"],
