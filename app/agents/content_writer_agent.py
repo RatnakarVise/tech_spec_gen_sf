@@ -36,104 +36,101 @@ def load_sections_from_template(template_file: str) -> list:
     if current_title and current_content:
         sections.append({"title": current_title, "content": "\n".join(current_content).strip()})
     return sections
-
-def filter_payload_by_keys(payload: Dict[str, Any], required_keys: List[str]) -> Dict[str, Any]:
-    """Utility to subset a dict for only listed keys (if provided)."""
-    if not required_keys:
-        return payload
-    return {k: payload[k] for k in required_keys if k in payload}
-
-
-
-# 🔧 NEW: Normalizer for SMARTFORM/SF_STRUTCURE
-def normalize_smartform_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
+def normalize_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Flatten SMARTFORM/SF_STRUTCURE into the flat keys expected by SECTION_BUNDLES.
-    - Collect all pages, windows, and elements instead of only the first.
-    - Merge multiple values into lists or joined strings.
+    Normalize payload keys and flatten SmartForm-specific sections
+    (SF_STRUCTURE, SF_PURPOSE) into a clean LLM-friendly structure.
     """
-    normalized = dict(payload)
+    normalized = {}
 
-    # --- SMARTFORM extraction ---
-    smartforms = payload.get("SMARTFORM", [])
-    if smartforms:
-        sf = smartforms[0]
-        normalized["formName"] = sf.get("formName", "")
-        field_table = sf.get("field_table", {})
+    # --- Step 1: Normalize top-level keys (case-insensitive) ---
+    for k, v in payload.items():
+        normalized[k.lower()] = v
 
-        # Pages
-        if "pages" in field_table:
-            normalized["page"] = [p.get("page", "") for p in field_table["pages"] if "page" in p]
+    # --- Step 2: Normalize SF_STRUCTURE ---
+    sf_structure = []
+    if "sf_structure" in normalized and isinstance(normalized["sf_structure"], list):
+        for struct in normalized["sf_structure"]:
+            for page in struct.get("PAGES", []):
+                page_name = page.get("PAGE_NAME", "")
+                for window in page.get("WINDOWS", []):
+                    entry = {
+                        "page": page_name,
+                        "window": window.get("WINDOW_NAME", ""),
+                        "texts": window.get("TEXTS", []),
+                        "code": window.get("CODE", []),
+                        "captions": window.get("CAPTIONS", []),
+                        "fields": window.get("FIELDS", []),
+                        "tables": window.get("TABLES", []),
+                    }
+                    sf_structure.append(entry)
+                for graphic in page.get("GRAPHICS", []):
+                    entry = {
+                        "page": page_name,
+                        "graphic": graphic.get("GRAPHIC_NAME", ""),
+                        "captions": graphic.get("CAPTIONS", []),
+                        "fields": graphic.get("FIELDS", []),
+                        "tables": graphic.get("TABLES", []),
+                    }
+                    sf_structure.append(entry)
+    normalized["sf_structure"] = sf_structure
 
-        # Windows
-        if "windows" in field_table:
-            normalized["window"] = [w.get("window", "") for w in field_table["windows"] if "window" in w]
-
-        # Elements (flatten all from all windows)
-        elements = []
-        for w in field_table.get("windows", []):
-            elements.extend(w.get("elements", []))
-
-        if elements:
-            # Merge multiple elemNames/nodeTypes
-            normalized["elemName"] = [e.get("elemName", "") for e in elements if e.get("elemName")]
-            normalized["nodeType"] = [e.get("nodeType", "") for e in elements if e.get("nodeType")]
-
-            # Merge textPayloads into one joined string
-            texts = [e.get("textPayload", "") for e in elements if e.get("textPayload")]
-            normalized["textPayload"] = " \n".join(texts)
-
-            # Mapping + Usage can be lists
-            normalized["mapping"] = [e.get("mapping", "") for e in elements if e.get("mapping")]
-            normalized["usage"] = [e.get("usage", "") for e in elements if e.get("usage")]
-
-    # --- SF_STRUTCURE extraction ---
-    sf_struct = payload.get("SF_STRUTCURE", [])
-    if sf_struct:
-        sf = sf_struct[0]
-
-        if "pages" in sf:
-            normalized["page"] = [p.get("page", "") for p in sf["pages"] if "page" in p]
-
-        if "windows" in sf:
-            normalized["window"] = [w.get("window", "") for w in sf["windows"] if "window" in w]
-
-        # Fields -> elemName list
-        if "FIELDS" in sf:
-            normalized["elemName"] = [f.get("FIELD", "") for f in sf["FIELDS"] if "FIELD" in f]
-
-        # Tables -> list of names
-        if "TABLES" in sf:
-            normalized["tables"] = [t.get("TABLE", "") for t in sf["TABLES"] if "TABLE" in t]
+    # --- Step 3: Normalize SF_PURPOSE ---
+    sf_purpose = []
+    if "sf_purpose" in normalized and isinstance(normalized["sf_purpose"], list):
+        for item in normalized["sf_purpose"]:
+            entry = {
+                "name": item.get("SF_NAME", ""),
+                "explanation": item.get("SF_EXPLAINATION", ""),
+            }
+            sf_purpose.append(entry)
+    normalized["sf_purpose"] = sf_purpose
 
     return normalized
+
+def filter_payload_by_keys(payload: Dict[str, Any], required_keys: List[str]) -> Dict[str, Any]:
+    """
+    Utility to subset a dict for only listed keys (if provided).
+    - Logs a warning if a required key is missing from the payload.
+    - Ensures all required keys appear in the returned dict, even if missing (set as None).
+    """
+    if not required_keys:
+        return payload
+
+    sub_payload = {}
+    for key in required_keys:
+        if key in payload:
+            sub_payload[key] = payload[key]
+        else:
+            logger.warning(f"[Payload Warning] Expected key '{key}' not found in payload after normalization.")
+            sub_payload[key] = None  # Explicitly include missing key
+    return sub_payload
+
 
 # =============================================================================
 # 💡 HERE you define how to club which sections and what payload keys to use
 # Each bundle is ( [section_name1, section_name2, ...], [payload_key1, payload_key2, ...])
 # NOT clubbed sections can be left as ["Section"], ["payload_key1"] so they're handled individually.
-# =============================================================================
-# 💡 Define which sections use which payload keys
 SECTION_BUNDLES = [
     (["Document Information", "Introduction", "Requirement Overview", "Solution Approach", "SAP Object Details"],
-     ['pgm_name','type','inc_name','explanation','formName','elemName','nodeType','coding','page','window','textPayload','mapping','usage']),
+     ['pgm_name','type','inc_name','explanation','sf_structure','sf_purpose']),
     (["User Interface Details"],
-     ["selectionscreen",'formName','elemName','nodeType','coding','page','window','textPayload','mapping','usage']),
+     ["selectionscreen",'sf_structure','sf_purpose']),
     (["Processing Logic & Control Flow"],
-     ['pgm_name','type','explanation','formName','elemName','nodeType','coding','page','window','textPayload','mapping','usage']),
+     ['pgm_name','type','explanation','sf_structure','sf_purpose']),
     (["Detailed Logic Block Descriptions"],
-     ['pgm_name','type','explanation','formName','elemName','nodeType','coding','page','window','textPayload','mapping','usage']),
+     ['pgm_name','type','explanation','sf_structure','sf_purpose']),
     (["Output Details"],
-     ['pgm_name','type','explanation','formName','elemName','nodeType','coding','page','window','textPayload','mapping','usage']),
+     ['pgm_name','type','explanation','sf_structure','sf_purpose']),
     (["Data Declarations & SAP Tables Used", "Enhancements & Modifications", "Error Handling & Logging", "Performance Considerations", "Security & Authorizations"],
-     ['selectionscreen','declarations','explanation','formName','elemName','nodeType','coding','page','window','textPayload','mapping','usage']),
+     ['selectionscreen','declarations','explanation','sf_structure','sf_purpose']),
     (["Test Scenario"],
-     ['selectionscreen','declarations','explanation','formName','elemName','nodeType','coding','page','window','textPayload','mapping','usage']),
+     ['selectionscreen','declarations','explanation','sf_structure','sf_purpose']),
     (["Flow Diagram"],
-     ['selectionscreen','declarations','explanation','formName','elemName','nodeType','coding','page','window','textPayload','mapping','usage']),
+     ['selectionscreen','declarations','explanation','sf_structure','sf_purpose']),
     (["SmartForm Layout Details","SmartForm Details"],
-     ['formName','elemName','nodeType','coding','page','window','textPayload','mapping','usage', 'smartform','sf_structure']),
-    (["Transport Management"], ['transport']),
+     ['sf_structure','sf_purpose']),
+    (["Transport Management"], ['trasport']),
     (["Sign-Off"], []),
 ]
 # =============================================================================
@@ -163,16 +160,17 @@ class ContentWriterAgent:
             logger.error("No payload provided.")
             return [{"section_name": "ERROR", "content": "No payload provided"}]
 
+        # ✅ Normalize payload before doing anything else
+        payload = normalize_payload(payload)
         self.results = []
 
         handled_sections = set()
-        normalized_payload = normalize_smartform_payload(payload)
         for section_names, payload_keys in SECTION_BUNDLES:
             for s in section_names:
                 if s in handled_sections:
                     continue
             section_bibles = {s: fetch_bible_knowledge(self.template_sections, s) for s in section_names}
-            sub_payload = filter_payload_by_keys(normalized_payload, payload_keys)
+            sub_payload = filter_payload_by_keys(payload, payload_keys)
             logger.info(f"Generating content for sections: {section_names} with keys {payload_keys}")
 
             section_texts = self.generate_sections(section_names, section_bibles, sub_payload)

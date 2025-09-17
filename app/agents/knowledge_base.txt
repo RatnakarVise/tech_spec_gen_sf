@@ -39,13 +39,13 @@ prompt: Present the results strictly as a table with the columns: Declaration Na
 
 #SmartForm Layout Details
 type: table
-description: Table of all Layout details.
+description: Table of all Layout details using sf_strcuture and sf_purpose.
 fields: [Page, Window, Element, Type, Description].
 prompt: Present the results strictly as a table with the columns: Page, Window, Element, Type, Description. and describe the layout of the smart using the Page window and field details
 
 #SmartForm Details
 type: text
-description: Describe the layout and the usage of all the fields.
+description: Describe the layout and the usage of all the fields using sf_strcuture and sf_purpose.
 prompt: Describe in detail about each and every section of form starting from Form Name -> Page -> Window -> elements -> code etc. Describe in detail everything you get in as smartform input
 
 #User Interface Details
