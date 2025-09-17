@@ -43,11 +43,10 @@ description: Table of all Layout details.
 fields: [Page, Window, Element, Type, Description].
 prompt: Present the results strictly as a table with the columns: Page, Window, Element, Type, Description. and describe the layout of the smart using the Page window and field details
 
-#Field Mapping Details
-type: table
-description: Table of all feild and logic details.
-fields: [SmartForm Field, Source Variable/Table, Mapping Logic, Usage].
-prompt: Present the results strictly as a table with the columns: SmartForm Field, Source Variable/Table, Mapping Logic, Usage. Describe each and every field logic present in the smartform
+#SmartForm Details
+type: text
+description: Describe the layout and the usage of all the fields.
+prompt: Describe in detail about each and every section of form starting from Form Name -> Page -> Window -> elements -> code etc. Describe in detail everything you get in as smartform input
 
 #User Interface Details
 type: table

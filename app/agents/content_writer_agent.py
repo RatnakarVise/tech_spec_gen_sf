@@ -131,8 +131,8 @@ SECTION_BUNDLES = [
      ['selectionscreen','declarations','explanation','formName','elemName','nodeType','coding','page','window','textPayload','mapping','usage']),
     (["Flow Diagram"],
      ['selectionscreen','declarations','explanation','formName','elemName','nodeType','coding','page','window','textPayload','mapping','usage']),
-    (["SmartForm Layout Details","Field Mapping Details"],
-     ['formName','elemName','nodeType','coding','page','window','textPayload','mapping','usage']),
+    (["SmartForm Layout Details","SmartForm Details"],
+     ['formName','elemName','nodeType','coding','page','window','textPayload','mapping','usage', 'smartform','sf_structure']),
     (["Transport Management"], ['transport']),
     (["Sign-Off"], []),
 ]
