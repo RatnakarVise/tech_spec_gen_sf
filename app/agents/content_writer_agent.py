@@ -36,9 +36,12 @@ def load_sections_from_template(template_file: str) -> list:
     if current_title and current_content:
         sections.append({"title": current_title, "content": "\n".join(current_content).strip()})
     return sections
+
+
+
 def normalize_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Normalize payload keys and flatten SmartForm-specific sections
+    Normalize payload keys and flatten Smartform-specific sections
     (SF_STRUCTURE, SF_PURPOSE) into a clean LLM-friendly structure.
     """
     normalized = {}
@@ -115,20 +118,22 @@ SECTION_BUNDLES = [
     (["Document Information", "Introduction", "Requirement Overview", "Solution Approach", "SAP Object Details"],
      ['pgm_name','type','inc_name','explanation','sf_structure','sf_purpose']),
     (["User Interface Details"],
-     ["selectionscreen",'sf_structure','sf_purpose']),
+     ["selectionscreen"]),
     (["Processing Logic & Control Flow"],
      ['pgm_name','type','explanation','sf_structure','sf_purpose']),
     (["Detailed Logic Block Descriptions"],
-     ['pgm_name','type','explanation','sf_structure','sf_purpose']),
+     ['pgm_name','type','explanation']),
     (["Output Details"],
-     ['pgm_name','type','explanation','sf_structure','sf_purpose']),
+     ['pgm_name','type','explanation']),
     (["Data Declarations & SAP Tables Used", "Enhancements & Modifications", "Error Handling & Logging", "Performance Considerations", "Security & Authorizations"],
-     ['selectionscreen','declarations','explanation','sf_structure','sf_purpose']),
+     ['selectionscreen','declarations','explanation']),
     (["Test Scenario"],
      ['selectionscreen','declarations','explanation','sf_structure','sf_purpose']),
     (["Flow Diagram"],
-     ['selectionscreen','declarations','explanation','sf_structure','sf_purpose']),
-    (["SmartForm Layout Details","SmartForm Details"],
+     ['selectionscreen','declarations','explanation']),
+    (["Smartform Layout"],
+     ['sf_structure','sf_purpose']),
+     (["Smartform Details"],
      ['sf_structure','sf_purpose']),
     (["Transport Management"], ['trasport']),
     (["Sign-Off"], []),
